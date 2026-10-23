@@ -8,9 +8,23 @@ const fields = [
   { name: "firstName", label: "სახელი" },
   { name: "lastName", label: "გვარი" },
   { name: "age", label: "ასაკი", type: "number" },
+  { name: "email", label: "იმეილი", type: "email" },
 ];
 
-const initialValues = { firstName: "", lastName: "", age: "" };
+const initialValues = { firstName: "", lastName: "", age: "", email: "" };
+
+function validateEmail(raw) {
+  const value = raw.trim();
+  if (!value) return "იმეილი სავალდებულოა";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) return "იმეილის ფორმატი არასწორია";
+  return "";
+}
+
+function validateByType(field, raw) {
+  if (field.type === "number") return validateAge(raw);
+  if (field.type === "email") return validateEmail(raw);
+  return validateField(field.label, raw);
+}
 
 function validateAge(raw) {
   const value = raw.trim();
@@ -46,10 +60,7 @@ export default function RegisterForm() {
     e.preventDefault();
     const found = {};
     for (const f of fields) {
-      const msg =
-        f.type === "number"
-          ? validateAge(values[f.name])
-          : validateField(f.label, values[f.name]);
+      const msg = validateByType(f, values[f.name]);
       if (msg) found[f.name] = msg;
     }
     setErrors(found);
@@ -65,6 +76,7 @@ export default function RegisterForm() {
           firstName: values.firstName.trim(),
           lastName: values.lastName.trim(),
           age: Number(values.age),
+          email: values.email.trim(),
         }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
