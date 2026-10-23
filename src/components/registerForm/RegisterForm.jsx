@@ -10,9 +10,26 @@ const fields = [
   { name: "age", label: "ასაკი", type: "number" },
   { name: "email", label: "იმეილი", type: "email" },
   { name: "password", label: "პაროლი", type: "password" },
+  { name: "phone", label: "ტელეფონი", type: "tel" },
 ];
 
-const initialValues = { firstName: "", lastName: "", age: "", email: "", password: "" };
+const initialValues = {
+  firstName: "",
+  lastName: "",
+  age: "",
+  email: "",
+  password: "",
+  phone: "",
+};
+
+function validatePhone(raw) {
+  const value = raw.trim();
+  if (!value) return "ტელეფონი სავალდებულოა";
+  if (!/^\d+$/.test(value)) return "ტელეფონი უნდა შეიცავდეს მხოლოდ ციფრებს";
+  if (value.length < 10) return "ტელეფონი უნდა შედგებოდეს მინიმუმ 10 სიმბოლოსგან";
+  if (value.length > 100) return "ტელეფონი უნდა შედგებოდეს მაქსიმუმ 100 სიმბოლოსგან";
+  return "";
+}
 
 function validatePassword(value) {
   if (!value) return "პაროლი სავალდებულოა";
@@ -35,6 +52,7 @@ function validateByType(field, raw) {
   if (field.type === "number") return validateAge(raw);
   if (field.type === "email") return validateEmail(raw);
   if (field.type === "password") return validatePassword(raw);
+  if (field.type === "tel") return validatePhone(raw);
   return validateField(field.label, raw);
 }
 
@@ -90,6 +108,7 @@ export default function RegisterForm() {
           age: Number(values.age),
           email: values.email.trim(),
           password: values.password,
+          phone: values.phone.trim(),
         }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
