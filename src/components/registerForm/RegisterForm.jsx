@@ -7,9 +7,20 @@ const API_URL = "https://jsonplaceholder.typicode.com/users";
 const fields = [
   { name: "firstName", label: "სახელი" },
   { name: "lastName", label: "გვარი" },
+  { name: "age", label: "ასაკი", type: "number" },
 ];
 
-const initialValues = { firstName: "", lastName: "" };
+const initialValues = { firstName: "", lastName: "", age: "" };
+
+function validateAge(raw) {
+  const value = raw.trim();
+  if (!value) return "ასაკი სავალდებულოა";
+  const num = Number(value);
+  if (!Number.isInteger(num)) return "ასაკი უნდა იყოს მთელი რიცხვი";
+  if (num < 13) return "ასაკი უნდა იყოს მინიმუმ 13";
+  if (num > 120) return "ასაკი უნდა იყოს მაქსიმუმ 120";
+  return "";
+}
 
 function validateField(label, raw) {
   const value = raw.trim();
@@ -35,7 +46,10 @@ export default function RegisterForm() {
     e.preventDefault();
     const found = {};
     for (const f of fields) {
-      const msg = validateField(f.label, values[f.name]);
+      const msg =
+        f.type === "number"
+          ? validateAge(values[f.name])
+          : validateField(f.label, values[f.name]);
       if (msg) found[f.name] = msg;
     }
     setErrors(found);
@@ -50,6 +64,7 @@ export default function RegisterForm() {
         body: JSON.stringify({
           firstName: values.firstName.trim(),
           lastName: values.lastName.trim(),
+          age: Number(values.age),
         }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
@@ -81,7 +96,7 @@ export default function RegisterForm() {
           {f.label}
           <input
             name={f.name}
-            type="text"
+            type={f.type ?? "text"}
             value={values[f.name]}
             onChange={handleChange}
             className="rounded border border-zinc-300 bg-transparent px-3 py-2 text-base text-black dark:border-zinc-700 dark:text-white"
