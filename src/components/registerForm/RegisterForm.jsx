@@ -4,30 +4,42 @@ import { useState } from "react";
 
 const API_URL = "https://jsonplaceholder.typicode.com/users";
 
-function validate(firstName) {
-  const value = firstName.trim();
-  if (!value) return "სახელი სავალდებულოა";
-  if (value.length < 4) return "სახელი უნდა შედგებოდეს მინიმუმ 4 სიმბოლოსგან";
-  if (value.length > 20) return "სახელი უნდა შედგებოდეს მაქსიმუმ 20 სიმბოლოსგან";
+const fields = [
+  { name: "firstName", label: "სახელი" },
+  { name: "lastName", label: "გვარი" },
+];
+
+const initialValues = { firstName: "", lastName: "" };
+
+function validateField(label, raw) {
+  const value = raw.trim();
+  if (!value) return `${label} სავალდებულოა`;
+  if (value.length < 4) return `${label} უნდა შედგებოდეს მინიმუმ 4 სიმბოლოსგან`;
+  if (value.length > 20) return `${label} უნდა შედგებოდეს მაქსიმუმ 20 სიმბოლოსგან`;
   return "";
 }
 
 export default function RegisterForm() {
-  const [firstName, setFirstName] = useState("");
-  const [error, setError] = useState("");
+  const [values, setValues] = useState(initialValues);
+  const [errors, setErrors] = useState({});
   const [status, setStatus] = useState({ type: "", message: "" });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFirstName(e.target.value);
-    setError("");
+    const { name, value } = e.target;
+    setValues((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const found = validate(firstName);
-    setError(found);
-    if (found) return;
+    const found = {};
+    for (const f of fields) {
+      const msg = validateField(f.label, values[f.name]);
+      if (msg) found[f.name] = msg;
+    }
+    setErrors(found);
+    if (Object.keys(found).length) return;
 
     setLoading(true);
     setStatus({ type: "", message: "" });
@@ -35,7 +47,10 @@ export default function RegisterForm() {
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName: firstName.trim() }),
+        body: JSON.stringify({
+          firstName: values.firstName.trim(),
+          lastName: values.lastName.trim(),
+        }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
@@ -43,7 +58,7 @@ export default function RegisterForm() {
         type: "success",
         message: `რეგისტრაცია წარმატებულია! ID: ${data.id}`,
       });
-      setFirstName("");
+      setValues(initialValues);
     } catch {
       setStatus({ type: "error", message: "რეგისტრაცია ვერ მოხერხდა, სცადეთ თავიდან." });
     } finally {
@@ -61,17 +76,21 @@ export default function RegisterForm() {
         რეგისტრაცია
       </h2>
 
-      <label className="flex flex-col gap-1 text-sm text-zinc-700 dark:text-zinc-300">
-        სახელი
-        <input
-          name="firstName"
-          type="text"
-          value={firstName}
-          onChange={handleChange}
-          className="rounded border border-zinc-300 bg-transparent px-3 py-2 text-base text-black dark:border-zinc-700 dark:text-white"
-        />
-        {error && <span className="text-xs text-red-600">{error}</span>}
-      </label>
+      {fields.map((f) => (
+        <label key={f.name} className="flex flex-col gap-1 text-sm text-zinc-700 dark:text-zinc-300">
+          {f.label}
+          <input
+            name={f.name}
+            type="text"
+            value={values[f.name]}
+            onChange={handleChange}
+            className="rounded border border-zinc-300 bg-transparent px-3 py-2 text-base text-black dark:border-zinc-700 dark:text-white"
+          />
+          {errors[f.name] && (
+            <span className="text-xs text-red-600">{errors[f.name]}</span>
+          )}
+        </label>
+      ))}
 
       <button
         type="submit"
